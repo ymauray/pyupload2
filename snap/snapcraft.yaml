@@ -1,0 +1,19 @@
+name: pyupload
+version: git
+base: core18
+summary: PyUpload
+description: |
+        A tool to manage uploading files to Auphonic and Archive.org
+
+grade: devel
+confinement: strict
+
+apps:
+        pyupoad:
+                command: bin/pyupload
+
+parts:
+        pyupload:
+                plugin: python
+                source: .
+
