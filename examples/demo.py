@@ -1,10 +1,12 @@
 from pyupload import Engine
 import pyupload.auphonic as auphonic
 
+import vault
+
 engine = Engine()
 
-print(engine.version)
+print("Using PyUpload engine version {}", engine.version)
 
-prod1 = auphonic.Production(multitrack = True)
-prod2 = auphonic.Production(id = "qwer-tzui-opas-dfgh-jkly")
+prod = auphonic.Production(preset = "JfM6rTYKfFoMVzh8bdYrZH", username = vault.username, password = vault.password)
+prod.create()
 

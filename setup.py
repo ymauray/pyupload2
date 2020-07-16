@@ -3,7 +3,7 @@ import setuptools
 from distutils.core import setup
 
 setup(name = "pyupload",
-      version="0.1pre1",
+      version="0.1rc1",
       author="Yannick Mauray",
       author_email="yannick@frenchguy.ch",
       description="A tool to help upload files to auphonic and archive.org",

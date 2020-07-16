@@ -16,4 +16,7 @@ parts:
         pyupload:
                 plugin: python
                 source: .
+                python-packages:
+                        - requests
+
 

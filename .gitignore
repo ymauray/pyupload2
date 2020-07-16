@@ -2,3 +2,6 @@ pyupload.egg-info/
 .venv/
 __pycache__/
 pyupload_0+git.407b99a_amd64.snap
+.venv/
+vault.py
+*.snap
