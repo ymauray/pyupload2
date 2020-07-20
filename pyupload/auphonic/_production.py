@@ -2,30 +2,36 @@ from requests.auth import HTTPBasicAuth
 
 from . import _service as service
 
-import requests
 import json
+import requests
+import sys
 
 class Production:
     """Auphonic production"""
-    def __init__(self, preset = None, multitrack = False, username = None, password = None):
+    def __init__(self, data, username, password):
         if username is None or password is None:
             raise Exception("Invalid credentials")
-
-        self._service = service.Service("productions", username, password)
-
-        if preset is not None:
-            self._preset = preset
-        else:
-            raise Exception("Not implemented yet")
+        self._data = data
+        self._service = service.Service(username, password)
+    
+    def set_metadata(self, metadata):
+        self._metadata = metadata
 
     def create(self):
-        if self._preset is not None:
-            response = self._service.post({
-                "preset" : self._preset,
-                "metadata": {
-                    "title": "PyUpload2 test"
-                }
-            })
+        response = self._service.post("productions", self._data)
+        self._uuid = response['data']['uuid']
 
-        print(response)
+    def use(self, uuid):
+        response = self._service.get("production/{}".format(uuid))
+        self._uuid = response['data']['uuid']
 
+    def status(self):
+        response = self._service.get("production/{}".format(self._uuid))
+        return response['data']['status']
+
+    def add_file(self, path, track = "input_file"):
+        if self._uuid is None:
+            raise Exception("Not initialized")
+        files = {}
+        files[track] = open(path, 'rb')
+        response = self._service.upload("production/{}/upload".format(self._uuid), files=files)

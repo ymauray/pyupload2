@@ -1,2 +1,133 @@
-#! /bin/env python
+#! /usr/bin/env python
 
+import argparse
+import datetime
+import os
+import sys
+import time
+
+import pyupload.auphonic as auphonic
+
+status = {
+    0: "File Upload",
+    1: "Waiting",
+    2: "Error",
+    3: "Done",
+    4: "Audio Processing",
+    5: "Audio Encoding",
+    6: "Outgoing File Transfer",
+    7: "Audio Mono Mixdown",
+    8: "Split Audio On Chapter Marks",
+    9: "Incomplete",
+    10: "Production Not Started Yet",
+    11: "Production Outdated",
+    12: "Incoming File Transfer",
+    13: "Stopping the Production",
+    14: "Speech Recognition"
+}
+
+class MyArgumentParser(argparse.ArgumentParser):
+    def convert_arg_line_to_args(self, arg_line):
+        if arg_line != "":
+            chunks = arg_line.split()
+            key = chunks[0]
+            value = ' '.join(chunks[1:])
+            if value != "":
+                if (value[0] == "'" or value[0] == "\""):
+                    value = value[1:-1]
+            kv = [key, value]
+            return kv
+        else:
+            return arg_line
+
+parser = MyArgumentParser(fromfile_prefix_chars="@")
+parser.add_argument('files', nargs='?')
+parser.add_argument('--username', required=True)
+parser.add_argument('--password', required=True)
+parser.add_argument('--preset', required=True)
+parser.add_argument('--is_multitrack', type=bool, default=False)
+parser.add_argument('--title', required=True)
+parser.add_argument('--thumbnail', required=True)
+parser.add_argument('--episode', type=int, required=True)
+parser.add_argument('--output_basename', required=True)
+parser.add_argument('--production')
+parser.add_argument('--skip-upload')
+
+year = datetime.datetime.now().year
+
+opts = vars(parser.parse_args(sys.argv[1:]))
+#print(opts)
+
+if opts['production'] is None:
+    print("Creating production...")
+    prod = auphonic.Production({
+        "preset": opts["preset"],
+        "is_multitrack": opts["is_multitrack"],
+        "metadata": {
+            "title": opts["title"],
+            "track": opts["episode"],
+            "year": year
+        },
+        "output_basename": opts["output_basename"]
+    }, opts['username'], opts['password'])
+    prod.create()
+    print("New production is {}".format(prod._uuid))
+else:
+    prod = auphonic.Production({}, opts['username'], opts['password'])
+    prod.use(opts['production'])
+    print("Using production {}".format(prod._uuid))
+
+print("Uploading cover art")
+prod.add_file(opts['thumbnail'], track="image")
+
+if opts['files'] is not None:
+    for file in opts['files']:
+        if '@' in file:
+            file, track = file.split('@')
+            if not os.path.exists(file):
+                raise FileNotFoundError(file)
+            print("Uploading track {} ({})...".format(track, file))
+            prod.add_file(file, track=track)
+        else:
+            if not os.path.exists(file):
+                raise FileNotFoundError(file)
+            print("Uploading single track {}...".format(file))
+            prod.add_file(file, track="input_file")
+print("Starting production")
+#prod.start()
+status_code = 0
+while status_code != 3:
+    status_code = prod.status()
+    print("Production status : {} ({})".format(status[status_code], status_code))
+    if status_code != 3: time.sleep(30)
+
+#import configparser
+#import getopt
+#import os
+#import sys
+#
+#try:
+#    opts, args = getopt.getopt(sys.argv[1:], "",
+#            ["no-confirm", "config=", "no-wait", "episode-input-file=", "episode-number=",
+#                "episode-title=", "episode-cover-art-file=", "auphonic-output-file-basename=",
+#                "auphonic-year=", "auphonic-preset=", "auphonic-username=", "auphonic-password=",
+#                "internetarchive-item=", "internetarchive-folder=", "internetarchive-access-key=",
+#                "internetarchive-secret-key=", "internetarchive-download"])
+#except getopt.GetoptError as err:
+#    print(err)
+#    sys.exit(2)
+#
+#config_ini = "config.ini"
+#
+#for o, a in opts:
+#    if o == '--config':
+#        config_ini = a
+#
+#
+#if os.path.isfile(config_ini):
+#    config = configparser.ConfigParser()
+#    config.read(config_ini)
+#else:
+#    print("Warning: config file {} not found.".format(config_ini))
+#
+#

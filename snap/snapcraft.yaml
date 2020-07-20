@@ -11,12 +11,15 @@ confinement: strict
 apps:
         pyupoad:
                 command: bin/pyupload
+                plugs:
+                        - removable-media
+                        - network
 
 parts:
         pyupload:
                 plugin: python
                 source: .
                 python-packages:
+                        - wheel
                         - requests
-
-
+                        - internetarchive
